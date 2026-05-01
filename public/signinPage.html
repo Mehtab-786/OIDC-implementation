@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Sign In</title>
+  </head>
+  <body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
+      <h2 class="text-2xl font-bold text-center mb-6">Sign In</h2>
+
+      <div
+        id="error-message"
+        class="bg-red-100 text-red-700 p-4 rounded mb-4 hidden"
+      >
+        Could not sign in. Please check your credentials and try again.
+        client_id and redirect_uri are required query parameters.
+      </div>
+
+      <div
+        id="success-message"
+        class="bg-green-100 text-green-700 p-4 rounded mb-4 hidden"
+      >
+        <h3>Successfully signed in. You will be redirected shortly.</h3>
+        <p><strong>Code:</strong> <span id="code"></span></p>
+        <p><strong>Client ID:</strong> <span id="client_id"></span></p>
+        <p><strong>Redirect URI:</strong> <span id="redirect_uri"></span></p>
+        <p><strong>User ID:</strong> <span id="user_id"></span></p>
+      </div>
+
+      <form method="post" action="/login" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">Email</label>
+          <input
+            type="email"
+            name="email"
+            id="email"
+            placeholder="Enter your email"
+            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium mb-1">Password</label>
+          <input
+            type="password"
+            name="password"
+            id="password"
+            placeholder="Enter your password"
+            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <button
+          class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition"
+        >
+          Login
+        </button>
+      </form>
+
+      <p class="text-sm text-center mt-4">
+        Don`t have an account?
+        <a id="registerUrl" href="/signup" class="text-blue-600 hover:underline"
+          >Register</a
+        >
+      </p>
+    </div>
+
+    <script>
+      const emailInput = document.getElementById("email");
+      const passwordInput = document.getElementById("password");
+
+      const params = new URLSearchParams(window.location.search);
+      const clientId = params.get("client_id") || "";
+      const redirecturi = params.get("redirect_uri") || "";
+
+      if (clientId == "" || redirecturi == "") {
+        document.getElementById("error-message").classList.remove("hidden");
+        document.querySelector("form").classList.add("hidden");
+      } else {
+        document.getElementById("error-message").classList.add("hidden");
+        document.querySelector("#registerUrl").href =
+          `/register?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirecturi)}`;
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        document.querySelector("form").addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          let response = await fetch("/login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              email: emailInput.value,
+              password: passwordInput.value,
+              client_id: clientId,
+              redirect_uri: redirecturi,
+            }),
+          });
+
+          let result = await response.json();
+
+          if (result.success) {
+            document
+              .getElementById("success-message")
+              .classList.remove("hidden");
+            document.getElementById("code").textContent = result.data.code;
+            document.getElementById("client_id").textContent = result.data.client_id;
+            document.getElementById("redirect_uri").textContent =
+              result.data.redirect_uri;
+            document.getElementById("user_id").textContent = result.data.user_id;
+          } else {
+            document.getElementById("error-message").classList.remove("hidden");
+            document.getElementById("success-message").classList.add("hidden");
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
